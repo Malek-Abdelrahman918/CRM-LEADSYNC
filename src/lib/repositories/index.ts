@@ -78,10 +78,33 @@ export async function importAllData(bundle: Partial<BackupBundle>): Promise<void
     taskRepository.replaceAll(bundle.tasks ?? []),
     bundle.settings ? settingsRepository.update(bundle.settings) : Promise.resolve(),
   ]);
+  // Imported data is the user's own — never treat it as sample.
+  await storage.setItem(STORAGE_KEYS.seeded, true);
+  await storage.setItem(STORAGE_KEYS.sample, false);
 }
 
 export async function clearAllData(): Promise<void> {
   await storage.clearAll(STORAGE_KEYS.leads.split(".")[0] + ".");
+  // Keep the seed guard set so the sample data does NOT reappear on next load,
+  // and flag the (now empty) workspace as the user's own — not sample.
+  await storage.setItem(STORAGE_KEYS.seeded, true);
+  await storage.setItem(STORAGE_KEYS.sample, false);
+}
+
+/** Whether the workspace currently holds the untouched sample dataset. */
+export async function isSampleData(): Promise<boolean> {
+  const flag = await storage.getItem<boolean>(STORAGE_KEYS.sample);
+  if (flag !== null) return flag;
+  // Backfill for workspaces seeded before the sample flag existed: infer from
+  // the presence of a known seed record, then persist the result.
+  const inferred = (await leadRepository.getById("seed-1")) !== null;
+  await storage.setItem(STORAGE_KEYS.sample, inferred);
+  return inferred;
+}
+
+/** Stop treating the current data as sample (e.g. once the user adds their own). */
+export async function markNotSample(): Promise<void> {
+  await storage.setItem(STORAGE_KEYS.sample, false);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -97,6 +120,7 @@ async function writeSeed() {
     taskRepository.replaceAll(seed.tasks),
   ]);
   await storage.setItem(STORAGE_KEYS.seeded, true);
+  await storage.setItem(STORAGE_KEYS.sample, true);
   return seed;
 }
 

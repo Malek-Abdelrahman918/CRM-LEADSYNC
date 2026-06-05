@@ -21,6 +21,8 @@ import {
   clearAllData,
   reseed,
   seedIfEmpty,
+  isSampleData,
+  markNotSample,
   DEFAULT_SETTINGS,
   type BackupBundle,
 } from "@/lib/repositories";
@@ -47,6 +49,8 @@ const CONTACT_TYPES: Activity["type"][] = [
 
 interface CrmState {
   hydrated: boolean;
+  /** True while the workspace holds the untouched sample dataset. */
+  isSample: boolean;
   leads: Lead[];
   activities: Activity[];
   notes: Note[];
@@ -56,6 +60,8 @@ interface CrmState {
   /* lifecycle */
   hydrate: () => Promise<void>;
   refresh: () => Promise<void>;
+  /** Keep the sample data but stop showing the sample banner. */
+  dismissSample: () => Promise<void>;
 
   /* leads */
   addLead: (input: NewLeadInput) => Promise<Lead>;
@@ -94,6 +100,7 @@ interface CrmState {
 
 export const useCrmStore = create<CrmState>((set, get) => ({
   hydrated: false,
+  isSample: false,
   leads: [],
   activities: [],
   notes: [],
@@ -104,7 +111,12 @@ export const useCrmStore = create<CrmState>((set, get) => ({
     if (get().hydrated) return;
     await seedIfEmpty();
     await get().refresh();
-    set({ hydrated: true });
+    set({ hydrated: true, isSample: await isSampleData() });
+  },
+
+  dismissSample: async () => {
+    await markNotSample();
+    set({ isSample: false });
   },
 
   refresh: async () => {
@@ -127,6 +139,10 @@ export const useCrmStore = create<CrmState>((set, get) => ({
       description: "Added manually",
     });
     set((s) => ({ leads: [lead, ...s.leads], activities: [activity, ...s.activities] }));
+    if (get().isSample) {
+      await markNotSample();
+      set({ isSample: false });
+    }
     return lead;
   },
 
@@ -227,6 +243,10 @@ export const useCrmStore = create<CrmState>((set, get) => ({
       leads: [...created, ...s.leads],
       activities: [...activities, ...s.activities],
     }));
+    if (get().isSample) {
+      await markNotSample();
+      set({ isSample: false });
+    }
     return created.length;
   },
 
@@ -316,6 +336,7 @@ export const useCrmStore = create<CrmState>((set, get) => ({
   importData: async (bundle) => {
     await importAllData(bundle);
     await get().refresh();
+    set({ isSample: false });
   },
 
   clearData: async () => {
@@ -325,6 +346,7 @@ export const useCrmStore = create<CrmState>((set, get) => ({
       activities: [],
       notes: [],
       tasks: [],
+      isSample: false,
       settings: { ...DEFAULT_SETTINGS, updatedAt: nowIso() },
     });
   },
@@ -332,5 +354,6 @@ export const useCrmStore = create<CrmState>((set, get) => ({
   loadSampleData: async () => {
     await reseed();
     await get().refresh();
+    set({ isSample: true });
   },
 }));

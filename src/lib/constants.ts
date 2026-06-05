@@ -20,6 +20,7 @@ export const STORAGE_KEYS = {
   tasks: "leadsync.tasks",
   settings: "leadsync.settings",
   seeded: "leadsync.seeded",
+  sample: "leadsync.sample",
   schemaVersion: "leadsync.schema_version",
 } as const;
 

@@ -68,7 +68,7 @@ function FileDrop({ onFile }: { onFile: (file: File) => void }) {
       <input
         ref={inputRef}
         type="file"
-        accept=".csv,text/csv"
+        accept=".csv,text/csv,application/vnd.ms-excel,text/plain"
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
@@ -243,6 +243,15 @@ export function ImportDialog({
                     </tbody>
                   </table>
                 </div>
+              </div>
+            )}
+
+            {validCount === 0 && (
+              <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+                No rows are ready to import yet. Using the dropdowns above, map a{" "}
+                <strong>First name</strong> / <strong>Last name</strong> (or a single{" "}
+                <strong>Full name</strong>) column, plus <strong>Company</strong> or{" "}
+                <strong>Email</strong>.
               </div>
             )}
 
