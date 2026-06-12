@@ -18,10 +18,7 @@ export function getStorageProvider(): StorageProvider {
 
   switch (APP_CONFIG.storage.backend) {
     case "supabase":
-      cached = new SupabaseProvider(
-        APP_CONFIG.integrations.supabase.url,
-        APP_CONFIG.integrations.supabase.anonKey,
-      );
+      cached = new SupabaseProvider();
       break;
     case "local":
     default:

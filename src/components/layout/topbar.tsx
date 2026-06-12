@@ -2,24 +2,34 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { AlertTriangle, Bell, Clock, Menu, Search } from "lucide-react";
+import { AlertTriangle, Bell, Clock, LogOut, Menu, Search, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "./theme-toggle";
 import { SidebarContent } from "./sidebar";
 import { AddLeadButton } from "@/components/leads/add-lead-button";
 import { LeadAvatar } from "@/components/shared/lead-avatar";
 import { useCrmStore } from "@/store/use-crm-store";
+import { useCommandMenu } from "@/store/use-command-menu";
 import { categorizeFollowUps } from "@/lib/follow-up/follow-up";
 import { formatRelative } from "@/lib/format";
+import { APP_CONFIG } from "@/lib/config/app-config";
+import { useSession, signOut } from "@/lib/supabase/use-session";
 import { cn } from "@/lib/utils";
 
 function MobileNav() {
@@ -39,25 +49,31 @@ function MobileNav() {
   );
 }
 
-function GlobalSearch() {
-  const router = useRouter();
-  const [q, setQ] = React.useState("");
+/** ⌘K trigger — replaces a traditional search box. */
+function CommandTrigger() {
+  const setOpen = useCommandMenu((s) => s.setOpen);
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        router.push(`/leads?search=${encodeURIComponent(q.trim())}`);
-      }}
-      className="relative hidden w-full max-w-xs sm:block"
-    >
-      <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
-      <Input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Search leads…"
-        className="h-9 pl-8"
-      />
-    </form>
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="border-input text-muted-foreground hover:bg-accent hover:text-foreground hidden h-9 w-full max-w-xs cursor-pointer items-center gap-2 rounded-md border bg-transparent px-3 text-sm shadow-xs transition-colors sm:flex"
+      >
+        <Search className="size-4" />
+        Search leads, actions…
+        <kbd className="bg-muted text-muted-foreground pointer-events-none ml-auto inline-flex h-5 items-center gap-1 rounded border px-1.5 font-mono text-[10px] font-medium select-none">
+          ⌘K
+        </kbd>
+      </button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="text-muted-foreground sm:hidden"
+        aria-label="Search"
+        onClick={() => setOpen(true)}
+      >
+        <Search className="size-4" />
+      </Button>
+    </>
   );
 }
 
@@ -139,14 +155,48 @@ function FollowUpBell() {
   );
 }
 
+/** Account menu — only rendered on the Supabase backend with a session. */
+function UserMenu() {
+  const session = useSession();
+  if (APP_CONFIG.storage.backend !== "supabase" || !session) return null;
+
+  const email = session.user.email ?? "Account";
+  const initial = email[0]?.toUpperCase() ?? "?";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="Account">
+          <Avatar className="size-7">
+            <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
+              {initial}
+            </AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="flex items-center gap-2">
+          <User className="size-4" />
+          <span className="truncate">{email}</span>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => void signOut()}>
+          <LogOut className="size-4" /> Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function Topbar() {
   return (
     <header className="bg-background/70 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30 flex h-14 items-center gap-2 border-b px-4 backdrop-blur sm:px-6">
       <MobileNav />
-      <GlobalSearch />
+      <CommandTrigger />
       <div className="ml-auto flex items-center gap-1">
         <FollowUpBell />
         <ThemeToggle />
+        <UserMenu />
         <AddLeadButton className="ml-1 hidden sm:inline-flex" />
         <AddLeadButton className="ml-1 sm:hidden" iconOnly />
       </div>

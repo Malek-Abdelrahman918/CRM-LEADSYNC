@@ -262,7 +262,7 @@ export function rowsToLeadInputs(
       };
       return input;
     })
-    .filter((l) => l.firstName || l.lastName || l.company);
+    .filter((l) => l.firstName || l.lastName || l.company || l.email);
 }
 
 /** A small preview of how rows will import, for the mapping UI. */
