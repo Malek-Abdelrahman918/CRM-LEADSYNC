@@ -33,4 +33,19 @@ export interface StorageProvider {
 
   /** Remove every key owned by the app (optionally filtered by prefix). */
   clearAll(prefix?: string): Promise<void>;
+
+  /* ------------------------------------------------------------------ */
+  /*  Optional granular operations                                       */
+  /*                                                                     */
+  /*  Network-backed stores (Supabase) implement these so single-record  */
+  /*  changes don't rewrite whole collections. When absent, the          */
+  /*  BaseRepository transparently falls back to read-modify-write via   */
+  /*  setCollection — LocalStorage stays simple, Supabase stays fast.    */
+  /* ------------------------------------------------------------------ */
+
+  /** Insert or update individual records inside a collection. */
+  upsertInCollection?<T extends { id: string }>(key: string, items: T[]): Promise<void>;
+
+  /** Remove individual records (by id) from a collection. */
+  removeFromCollection?(key: string, ids: string[]): Promise<void>;
 }

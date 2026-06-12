@@ -1,6 +1,8 @@
 import { AppSidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { SampleDataBanner } from "@/components/shared/sample-data-banner";
+import { CommandMenu } from "@/components/command/command-menu";
+import { BrandStyle } from "@/components/providers/brand-style";
 
 export default function AppLayout({
   children,
@@ -9,6 +11,8 @@ export default function AppLayout({
 }) {
   return (
     <div className="flex min-h-dvh">
+      <BrandStyle />
+      <CommandMenu />
       <AppSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />

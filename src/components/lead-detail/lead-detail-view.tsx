@@ -15,6 +15,7 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { LeadStatusBadge, ScorePill } from "@/components/leads/lead-badges";
 import { LeadFormDialog } from "@/components/leads/lead-form-dialog";
 import { LeadScoreCard } from "./lead-score-card";
+import { LeadAICard } from "./lead-ai-card";
 import { ContactInfoCard, CompanyInfoCard } from "./lead-info-cards";
 import { LeadActivityTimeline } from "./lead-activity-timeline";
 import { LeadNotes } from "./lead-notes";
@@ -30,16 +31,30 @@ export function LeadDetailView({ id }: { id: string }) {
   const tasks = useCrmStore((s) => s.tasks);
   const deleteLead = useCrmStore((s) => s.deleteLead);
 
+  // Sort explicitly (newest first) — storage backends don't guarantee order.
   const leadActivities = React.useMemo(
-    () => activities.filter((a) => a.leadId === id),
+    () =>
+      activities
+        .filter((a) => a.leadId === id)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [activities, id],
   );
   const leadNotes = React.useMemo(
-    () => notes.filter((n) => n.leadId === id),
+    () =>
+      notes
+        .filter((n) => n.leadId === id)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [notes, id],
   );
   const leadTasks = React.useMemo(
-    () => tasks.filter((t) => t.leadId === id),
+    () =>
+      tasks
+        .filter((t) => t.leadId === id)
+        .sort(
+          (a, b) =>
+            Number(a.completed) - Number(b.completed) ||
+            b.createdAt.localeCompare(a.createdAt),
+        ),
     [tasks, id],
   );
   const openTasks = leadTasks.filter((t) => !t.completed).length;
@@ -139,6 +154,7 @@ export function LeadDetailView({ id }: { id: string }) {
         </div>
 
         <div className="space-y-6">
+          <LeadAICard lead={lead} activities={leadActivities} />
           <LeadScoreCard lead={lead} />
           <LeadStatusCard lead={lead} />
           <ContactInfoCard lead={lead} />

@@ -2,8 +2,10 @@
 
 An internal, AI-ready **sales operating system** for an automation agency — a
 full CRM with leads, a drag-and-drop pipeline, analytics, lead scoring and a
-follow-up system. Built to run today on the browser, architected so Phase 2/3
-integrations (Supabase, OpenAI/Claude, Apollo, n8n) plug in **without a rewrite**.
+follow-up system. Runs today with zero setup (browser-only), and the **Phase 2**
+seams — Supabase auth/database and Claude/OpenAI assistance — are now wired up
+behind environment flags. Apollo and n8n remain declared interfaces, ready to
+implement without a rewrite.
 
 ## Phase 1 stack
 
@@ -27,6 +29,50 @@ npm run build      # production build
 npm run typecheck  # tsc --noEmit
 npm run lint       # eslint
 ```
+
+Press **⌘K / Ctrl-K** anywhere for the command palette (search, navigate, act).
+
+## Phase 2 — now wired up (optional)
+
+Everything below is **off by default** — the app is fully functional without it.
+Copy `.env.example` to `.env.local` and fill in what you want. Nothing
+`NEXT_PUBLIC_*` aside, all keys stay server-side (used only in `/api/*` route
+handlers).
+
+### Supabase — shared database + auth (multi-user)
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. Run [`supabase/schema.sql`](./supabase/schema.sql) in the SQL editor (one
+   RLS-protected table, scoped per user).
+3. Set in `.env.local`:
+   ```bash
+   NEXT_PUBLIC_STORAGE_BACKEND=supabase
+   NEXT_PUBLIC_SUPABASE_URL=…
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=…
+   ```
+   The app now shows a sign-in screen and persists data to Postgres instead of
+   LocalStorage — **no repository or component changes**, just the flag.
+
+### AI — outreach drafting & lead summaries (Claude or OpenAI)
+
+Set **either** key (Anthropic wins if both are present):
+
+```bash
+ANTHROPIC_API_KEY=…      # uses claude-opus-4-8 by default
+# or
+OPENAI_API_KEY=…         # uses gpt-4o by default
+```
+
+The **AI Assistant** card on each lead can then draft a personalised outreach
+email and summarise the lead from its activity — copy it or save it as a note.
+When no key is set, the card explains how to enable it (no errors).
+
+### Still declared, not implemented (Phase 2/3)
+
+`LeadProvider` / `EnrichmentProvider` (Apollo) and `OutreachProvider` (n8n) are
+interfaces in `src/lib/providers-future/`. Implement one, register it in
+`src/lib/providers/register.ts`, and the UI picks it up — same pattern the AI
+provider already follows (`src/lib/providers/api-ai-provider.ts`).
 
 ## Features
 

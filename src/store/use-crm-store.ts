@@ -27,6 +27,7 @@ import {
   type BackupBundle,
 } from "@/lib/repositories";
 import { STAGE_MAP } from "@/lib/constants";
+import { APP_CONFIG } from "@/lib/config/app-config";
 import { nowIso } from "@/lib/id";
 import type { NewTaskInput } from "@/lib/repositories/task-repository";
 import type { LogActivityInput } from "@/lib/repositories/activity-repository";
@@ -109,7 +110,9 @@ export const useCrmStore = create<CrmState>((set, get) => ({
 
   hydrate: async () => {
     if (get().hydrated) return;
-    await seedIfEmpty();
+    // Demo data only ever auto-seeds the local backend; a real database starts
+    // empty (Settings → "Load sample data" is still available there).
+    if (APP_CONFIG.storage.backend === "local") await seedIfEmpty();
     await get().refresh();
     set({ hydrated: true, isSample: await isSampleData() });
   },
